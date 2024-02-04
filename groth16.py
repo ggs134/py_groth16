@@ -138,17 +138,17 @@ Hx = q
 
 #r = [0, 0, 0, 0]
 
-# alpha = FQ(3926)
-# beta = FQ(3604)
-# gamma = FQ(2971)
-# delta = FQ(1357)
-# x_val = FQ(3721)
+alpha = FQ(3926)
+beta = FQ(3604)
+gamma = FQ(2971)
+delta = FQ(1357)
+x_val = FQ(3721)
 
-alpha = FQ(randint(0, bn128.curve_order))
-beta = FQ(randint(0, bn128.curve_order))
-gamma = FQ(randint(0, bn128.curve_order))
-delta = FQ(randint(0, bn128.curve_order))
-x_val = FQ(randint(0, bn128.curve_order))
+# alpha = FQ(randint(0, bn128.curve_order))
+# beta = FQ(randint(0, bn128.curve_order))
+# gamma = FQ(randint(0, bn128.curve_order))
+# delta = FQ(randint(0, bn128.curve_order))
+# x_val = FQ(randint(0, bn128.curve_order))
 
 tau = [alpha, beta, gamma, delta, x_val]
 
@@ -193,24 +193,26 @@ for i in range(numGates):
     sigma1_2.append(mult(g1, int(val)))
 
 #sigma1_3
+VAL = [FQ(0)]*numWires
 for i in range(numWires):
     if i in [0, numWires-1]:
         val = (beta*Ax_val[i] + alpha*Bx_val[i] + Cx_val[i]) / gamma
+        VAL[i] = val
         sigma1_3.append(mult(g1, int(val)))
     else:
-        sigma1_3.append(0)
+        sigma1_3.append((FQ(0), FQ(0)))
 
 #sigma1_4
 for i in range(numWires):
     if i in [0, numWires-1]:
-        sigma1_4.append(0)
+        sigma1_4.append((FQ(0), FQ(0)))
     else:
         val = (beta*Ax_val[i] + alpha*Bx_val[i] + Cx_val[i]) / delta
         sigma1_4.append(mult(g1, int(val)))
 
 #sigma1_5
 for i in range(numGates-1):
-    sigma1_5.append(mult(g1, int(x_val**i * Zx_val / delta)))
+    sigma1_5.append(mult(g1, int((x_val**i * Zx_val) / delta)))
 
 #sigma2-2
 for i in range(numGates):
@@ -246,11 +248,11 @@ print(lhs == rhs)
 
 ### 2. PROVING ###
 
-# r = FQ(4106)
-# s = FQ(4565)
+r = FQ(4106)
+s = FQ(4565)
 
-r = FQ(randint(0, bn128.curve_order))
-s = FQ(randint(0, bn128.curve_order))
+# r = FQ(randint(0, bn128.curve_order))
+# s = FQ(randint(0, bn128.curve_order))
 
 #Build Proof_A, g1 based
 proof_A = sigma1_1[0]
@@ -284,7 +286,7 @@ temp_proof_B = add(temp_proof_B, mult(sigma1_1[2], int(s)))
 #Build proof_C, g1_based
 proof_C = add(add(mult(proof_A, int(s)), mult(temp_proof_B, int(r))), neg(mult(sigma1_1[2], int(r*s))))
 
-for i in range(1,numGates-1):
+for i in range(1, numGates-1):
     proof_C = add(proof_C, mult(sigma1_4[i], int(Rx[i])))
 
 for i in range(numGates-1):
@@ -296,16 +298,57 @@ proof = [proof_A, proof_B, proof_C]
 print("proofs : ", proof)
 print("")
 
+#TODO : FIX ERROR
+
 ### 2.1 PROOF COMPLETENESS CHECK ###
 
-# A = alpha + multiply_vec_vec(Rx, Ax_val) + r*delta
-# B = beta + multiply_vec_vec(Rx, Bx_val) + s*delta
-# C = 1/delta * 
+def scalar_vec(scalar, vec):
+    return [scalar*num for num in vec]
 
-# A=mod(alpha+R*Ax_val+r*delta,q);
-# B=mod(beta+R*Bx_val+s*delta,q);
-# C=mod(MODinv(delta,q)*(R(Ind_pri)*(beta*Ax_val(Ind_pri)+alpha*Bx_val(Ind_pri)+Cx_val(Ind_pri))+Hx_val*Zx_val)...
-#     +A*s+B*r+mod(-r*s*delta,q),q);
+A = alpha + multiply_vec_vec(Rx, Ax_val) + r*delta
+B = beta + multiply_vec_vec(Rx, Bx_val) + s*delta
+
+C1 = scalar_vec(1/delta, Rx[1:numWires-1])
+C2_1 = scalar_vec(beta, Ax_val[1:numWires-1])
+C2_2 = scalar_vec(alpha, Bx_val[1:numWires-1])
+C2_3 = Cx_val[1:numWires-1]
+C3 = Hx_val*Zx_val
+C4 = A*s + B*r - r*s*delta
+
+C = multiply_vec_vec(C1, (add_polys(add_polys(C2_1, C2_2), C2_3))) + C3 + C4
+
+lhs = A*B #21888242871839275222246405745257275088696311157297822351396500209997772010803
+
+rhs = alpha*beta #14149304
+
+rpub = [Rx[0], Rx[-1]]
+valpub = [VAL[0], VAL[-1]]
+
+rhs = rhs + gamma*multiply_vec_vec(rpub,valpub) #12058091336480024
+rhs = rhs + C*delta #21888242871839275222246405745257275088696311157296044262399092723855246624563
+
+print("#PROOF COMPLETENESS CHECK#")
+print("rhs : {}".format(rhs))
+print("lhs : {}".format(lhs))
+print("")
+
+# A = alpha + Rx*Ax_val + r*delta
+# B = beta + Rx*Bx_val + s*delta
+# C = 1/delta*Rx[1:numWires-1]*(beta*Ax_val[1:numWires-1] + alpha*Bx_val[1:numWires-1] + Cx_val[1:numWires-1]) + Hx_val*Zx_val + A*s + B*r + (-r*s*delta)
+
+# lhs = A*B
+
+# rhs = alpha*beta #2024
+
+# rpub = [Rx[0], Rx[-1]]
+# valpub = [VAL[0], VAL[-1]]
+
+# rhs = rhs + gamma*vector(rpub)*vector(valpub)  #4040
+# rhs = rhs + C*delta #984
+
+# result = (proof_A == g*A) and (proof_B == B*h) and (proof_C == C*g)
+
+# print("proof completeness check : {}".format(result and lhs==rhs))
 
 ##### 3. VERIFY ######
     
@@ -317,10 +360,11 @@ temp = None
 for i in [0, numWires-1]:
   temp = add(temp, mult(sigma1_3[i], int(Rx[i])))
 
-RHS = (RHS * pairing(sigma2_1[1], temp)) * pairing(sigma2_1[2], proof_C)
+RHS = (RHS * pairing(sigma2_1[1], temp)) * pairing(sigma2_1[2], proof[2])
 
 print("LHS", LHS)
+print("")
 print("RHS", RHS)
-
+print("")
 print("Verification result (RHS == LHS)? : {}".format(RHS == LHS))
 
