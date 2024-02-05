@@ -6,6 +6,12 @@ from random import randint
 g1 = bn128.G1
 g2 = bn128.G2
 
+# FR = FQ
+# FR.field_modulus = bn128.curve_order
+
+class FR(FQ):
+    field_modulus = bn128.curve_order
+
 #TEST pairing
 mult = bn128.multiply
 pairing = bn128.pairing
@@ -95,11 +101,11 @@ Z = [3456.0, -7200.0, 5040.0, -1440.0, 144.0]
 R = [1, 3, 35, 9, 27, 30]
 
 
-Ax = [ [FQ(int(num)) for num in vec] for vec in Ap ]
-Bx = [ [FQ(int(num)) for num in vec] for vec in Bp ]
-Cx = [ [FQ(int(num)) for num in vec] for vec in Cp ]
-Zx = [ FQ(int(num)) for num in Z ]
-Rx = [ FQ(int(num)) for num in R ]
+Ax = [ [FR(int(num)) for num in vec] for vec in Ap ]
+Bx = [ [FR(int(num)) for num in vec] for vec in Bp ]
+Cx = [ [FR(int(num)) for num in vec] for vec in Cp ]
+Zx = [ FR(int(num)) for num in Z ]
+Rx = [ FR(int(num)) for num in R ]
 
 # Rax = [multiply_polys(Rx, vec)for vec in Ax]
 # Rbx = [multiply_polys(Rx, vec)for vec in Bx]
@@ -138,11 +144,11 @@ Hx = q
 
 #r = [0, 0, 0, 0]
 
-alpha = FQ(3926)
-beta = FQ(3604)
-gamma = FQ(2971)
-delta = FQ(1357)
-x_val = FQ(3721)
+alpha = FR(3926)
+beta = FR(3604)
+gamma = FR(2971)
+delta = FR(1357)
+x_val = FR(3721)
 
 # alpha = FQ(randint(0, bn128.curve_order))
 # beta = FQ(randint(0, bn128.curve_order))
@@ -193,19 +199,19 @@ for i in range(numGates):
     sigma1_2.append(mult(g1, int(val)))
 
 #sigma1_3
-VAL = [FQ(0)]*numWires
+VAL = [FR(0)]*numWires
 for i in range(numWires):
     if i in [0, numWires-1]:
         val = (beta*Ax_val[i] + alpha*Bx_val[i] + Cx_val[i]) / gamma
         VAL[i] = val
         sigma1_3.append(mult(g1, int(val)))
     else:
-        sigma1_3.append((FQ(0), FQ(0)))
+        sigma1_3.append((FR(0), FR(0)))
 
 #sigma1_4
 for i in range(numWires):
     if i in [0, numWires-1]:
-        sigma1_4.append((FQ(0), FQ(0)))
+        sigma1_4.append((FR(0), FR(0)))
     else:
         val = (beta*Ax_val[i] + alpha*Bx_val[i] + Cx_val[i]) / delta
         sigma1_4.append(mult(g1, int(val)))
@@ -248,8 +254,8 @@ print(lhs == rhs)
 
 ### 2. PROVING ###
 
-r = FQ(4106)
-s = FQ(4565)
+r = FR(4106)
+s = FR(4565)
 
 # r = FQ(randint(0, bn128.curve_order))
 # s = FQ(randint(0, bn128.curve_order))
