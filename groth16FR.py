@@ -114,7 +114,7 @@ Rx = [ FR(int(num)) for num in R ]
 def multiply_vec_matrix(vec, matrix):
     # len(vec) == len(matrix.row)
     assert not len(vec) == len(matrix[0])
-    target = [FQ(0)]*len(vec)
+    target = [FR(0)]*len(vec)
     for i in range(len(matrix)): #loop num of rows == size of vec, 0-5
         for j in range(len(matrix[0])): #loop num of columns, 0-3
             target[j] = target[j] + vec[i] * matrix[i][j]
