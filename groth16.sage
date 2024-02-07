@@ -337,17 +337,25 @@ print()
 A = alpha + Rx*Ax_val + r*delta
 B = beta + Rx*Bx_val + s*delta
 
-C = 1/delta*Rx[1:numWires-1]*(beta*Ax_val[1:numWires-1] + alpha*Bx_val[1:numWires-1] + Cx_val[1:numWires-1]) + Hx_val*Zx_val + A*s + B*r + (-r*s*delta)
+# C = 1/delta * Rx[1:numWires-1]*(beta*Ax_val[1:numWires-1] + alpha*Bx_val[1:numWires-1] + Cx_val[1:numWires-1]) + Hx_val*Zx_val + A*s + B*r + (-r*s*delta)
+C = 1/delta * \
+    (Rx[1:numWires-1] * \
+        (beta*Ax_val[1:numWires-1] + alpha*Bx_val[1:numWires-1] + Cx_val[1:numWires-1]) \
+        + Hx_val*Zx_val \
+    ) \
+     + A*s \
+     + B*r \
+     + (-r*s*delta)
 
 lhs = A*B
 
-rhs = alpha*beta
+rhs = alpha*beta #14149304
 
 rpub = [Rx[0], Rx[-1]]
 valpub = [VAL[0], VAL[-1]]
 
-rhs = rhs + gamma*vector(rpub)*vector(valpub)  #4040
-rhs = rhs + C*delta #984
+rhs = rhs + gamma*vector(rpub)*vector(valpub)  #12058091336480024
+rhs = rhs + C*delta #21888242871839275222246405745257275088548364400416033032405666501928354297837
 
 result = (proof_A == g*A) and (proof_B == B*h) and (proof_C == C*g)
 

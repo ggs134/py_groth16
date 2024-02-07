@@ -304,7 +304,6 @@ proof = [proof_A, proof_B, proof_C]
 print("proofs : ", proof)
 print("")
 
-#TODO : FIX completeness check failing
 ### 2.1 PROOF COMPLETENESS CHECK ###
 
 def scalar_vec(scalar, vec):
@@ -313,14 +312,32 @@ def scalar_vec(scalar, vec):
 A = alpha + multiply_vec_vec(Rx, Ax_val) + r*delta
 B = beta + multiply_vec_vec(Rx, Bx_val) + s*delta
 
-C1 = scalar_vec(1/delta, Rx[1:numWires-1])
-C2_1 = scalar_vec(beta, Ax_val[1:numWires-1])
-C2_2 = scalar_vec(alpha, Bx_val[1:numWires-1])
-C2_3 = Cx_val[1:numWires-1]
-C3 = Hx_val*Zx_val
-C4 = A*s + B*r - r*s*delta
+# C1 = scalar_vec(1/delta, Rx[1:numWires-1])
+# C2_1 = scalar_vec(beta, Ax_val[1:numWires-1])
+# C2_2 = scalar_vec(alpha, Bx_val[1:numWires-1])
+# C2_3 = Cx_val[1:numWires-1]
+# C3 = Hx_val*Zx_val
+# C4 = A*s + B*r - r*s*delta
 
-C = multiply_vec_vec(C1, (add_polys(add_polys(C2_1, C2_2), C2_3))) + C3 + C4
+# C = multiply_vec_vec(C1, (add_polys(add_polys(C2_1, C2_2), C2_3))) + C3 + C4
+
+
+# C0 * {C1*(C1_1+C1_2+C1_3) + C2} + C3
+C0 = 1/delta 
+C1 = Rx[1:numWires-1] #vec
+C1_1 = scalar_vec(beta, Ax_val[1:numWires-1])
+C1_2 = scalar_vec(alpha, Bx_val[1:numWires-1])
+C1_3 = Cx_val[1:numWires-1]
+C2 = Hx_val*Zx_val
+C3 = A*s + B*r - r*s*delta
+
+C1112 = add_polys(C1_1, C1_2) # vec
+C111213 = add_polys(C1112, C1_3) # vec
+C1111213 = multiply_vec_vec(C1, C111213) #num
+
+C = C0 * (C1111213 + C2) + C3
+
+# C = multiply_vec_vec(C1, (add_polys(add_polys(C2_1, C2_2), C2_3))) + C3 + C4
 
 lhs = A*B #21888242871839275222246405745257275088548364400416033032405666501928354297837
 
@@ -345,6 +362,10 @@ print("")
 print('g2*B = {}'.format(mult(g2,int(B))))
 print('proof_B = {}'.format(proof_B))
 print("")
+
+#TODO : g1*C == proof_C failing
+#problem is proof_C
+
 print('g1*C = {}'.format(mult(g1,int(C))))
 print('proof_C = {}'.format(proof_C))
 print("")
