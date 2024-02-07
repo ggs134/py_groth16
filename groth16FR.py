@@ -150,11 +150,11 @@ gamma = FR(2971)
 delta = FR(1357)
 x_val = FR(3721)
 
-# alpha = FQ(randint(0, bn128.curve_order))
-# beta = FQ(randint(0, bn128.curve_order))
-# gamma = FQ(randint(0, bn128.curve_order))
-# delta = FQ(randint(0, bn128.curve_order))
-# x_val = FQ(randint(0, bn128.curve_order))
+# alpha = FR(randint(0, bn128.curve_order))
+# beta = FR(randint(0, bn128.curve_order))
+# gamma = FR(randint(0, bn128.curve_order))
+# delta = FR(randint(0, bn128.curve_order))
+# x_val = FR(randint(0, bn128.curve_order))
 
 tau = [alpha, beta, gamma, delta, x_val]
 
@@ -190,7 +190,7 @@ sigma1_3 = []
 sigma1_4 = []
 sigma1_5 = []
 
-sigma2_1 = [mult(g2, int(alpha)), mult(g2, int(beta)), mult(g2, int(delta))]
+sigma2_1 = [mult(g2, int(beta)), mult(g2, int(gamma)), mult(g2, int(delta))]
 sigma2_2 = []
 
 #sigma1_2
@@ -206,12 +206,12 @@ for i in range(numWires):
         VAL[i] = val
         sigma1_3.append(mult(g1, int(val)))
     else:
-        sigma1_3.append((FR(0), FR(0)))
+        sigma1_3.append((FQ(0), FQ(0)))
 
 #sigma1_4
 for i in range(numWires):
     if i in [0, numWires-1]:
-        sigma1_4.append((FR(0), FR(0)))
+        sigma1_4.append((FQ(0), FQ(0)))
     else:
         val = (beta*Ax_val[i] + alpha*Bx_val[i] + Cx_val[i]) / delta
         sigma1_4.append(mult(g1, int(val)))
@@ -257,8 +257,8 @@ print(lhs == rhs)
 r = FR(4106)
 s = FR(4565)
 
-# r = FQ(randint(0, bn128.curve_order))
-# s = FQ(randint(0, bn128.curve_order))
+# r = FR(randint(0, bn128.curve_order))
+# s = FR(randint(0, bn128.curve_order))
 
 #Build Proof_A, g1 based
 proof_A = sigma1_1[0]
@@ -304,8 +304,7 @@ proof = [proof_A, proof_B, proof_C]
 print("proofs : ", proof)
 print("")
 
-#TODO : FIX ERROR
-
+#TODO : FIX completeness check failing
 ### 2.1 PROOF COMPLETENESS CHECK ###
 
 def scalar_vec(scalar, vec):
@@ -323,22 +322,31 @@ C4 = A*s + B*r - r*s*delta
 
 C = multiply_vec_vec(C1, (add_polys(add_polys(C2_1, C2_2), C2_3))) + C3 + C4
 
-lhs = A*B #21888242871839275222246405745257275088696311157297822351396500209997772010803
+lhs = A*B #21888242871839275222246405745257275088548364400416033032405666501928354297837
 
 rhs = alpha*beta #14149304
 
-rpub = [Rx[0], Rx[-1]]
-valpub = [VAL[0], VAL[-1]]
+rpub = [Rx[0], Rx[-1]] #[1, 30]
+valpub = [VAL[0], VAL[-1]] 
+#[17858330771234736835653075572704017103548042849750409710240473560856989375368,
+# 3057428741774924004453806255227791707084339019243572619533744442206670609805]
 
 rhs = rhs + gamma*multiply_vec_vec(rpub,valpub) #12058091336480024
-rhs = rhs + C*delta #21888242871839275222246405745257275088696311157296044262399092723855246624563
+rhs = rhs + C*delta #21888242871839275222246405745257275088548364400414254943408259015785828911597
 
 print("#PROOF COMPLETENESS CHECK#")
 print("rhs : {}".format(rhs))
 print("lhs : {}".format(lhs))
 print("rhs == lhs ? : {}".format(rhs == lhs))
-print('g*A = {}'.format(mult(g1,int(A))))
+print("")
+print('g1*A = {}'.format(mult(g1,int(A))))
 print('proof_A = {}'.format(proof_A))
+print("")
+print('g2*B = {}'.format(mult(g2,int(B))))
+print('proof_B = {}'.format(proof_B))
+print("")
+print('g1*C = {}'.format(mult(g1,int(C))))
+print('proof_C = {}'.format(proof_C))
 print("")
 
 # A = alpha + Rx*Ax_val + r*delta
@@ -359,6 +367,7 @@ print("")
 
 # print("proof completeness check : {}".format(result and lhs==rhs))
 
+# TODO : fix VERIFY failing
 ##### 3. VERIFY ######
     
 LHS = pairing(proof_B, proof_A)
