@@ -1,3 +1,4 @@
+import random
 #q
 curve_order = 21888242871839275222246405745257275088548364400416034343698204186575808495617
 q = curve_order
@@ -316,9 +317,10 @@ for i in range(numWires):
 temp_proof_B = temp_proof_B + (s * sigma1_1[2])
 
 #Build proof_C
-proof_C = (s * proof_A) + (r * temp_proof_B) - (r*s*sigma1_1[2])
+proof_C = (s * proof_A) + (r * temp_proof_B) - (r*(s*sigma1_1[2]))
+# (4352626766943017974686833467213147577112460245009015854517643995829103655061 : 14150322707101854868541038180466322029484061124505173136762171304029668025236 : 1)
 
-for i in range(1,numGates-1):
+for i in range(1,numWires-1):
     proof_C = proof_C + (Rx[i] * sigma1_4[i])
 
 for i in range(numGates-1):
@@ -357,9 +359,19 @@ valpub = [VAL[0], VAL[-1]]
 rhs = rhs + gamma*vector(rpub)*vector(valpub)  #12058091336480024
 rhs = rhs + C*delta #21888242871839275222246405745257275088548364400416033032405666501928354297837
 
-result = (proof_A == g*A) and (proof_B == B*h) and (proof_C == C*g)
+resultA = (proof_A == g*A)
+resultB = (proof_B == h*B)
+resultC = (proof_C == g*C)
+# proof_C : (4352626766943017974686833467213147577112460245009015854517643995829103655061 : 14150322707101854868541038180466322029484061124505173136762171304029668025236 : 1)
+# g*C = (17892816734297635734314338774389722033291249994321218544109631619472314369752 : 11164067306709071421685207109564936489488241352476878599597215760745853309311 : 1)
 
-print("proof completeness check : {}".format(result and lhs==rhs))
+# result = (proof_A == g*A) and (proof_B == B*h) and (proof_C == C*g)
+
+print("proof completeness check")
+print("lhs == rhs", lhs == rhs)
+print("result A", resultA)
+print("result B", resultB)
+print("result C", resultC)
 
 #TODO : not working
 

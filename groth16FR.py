@@ -18,6 +18,9 @@ pairing = bn128.pairing
 add = bn128.add
 neg = bn128.neg
 
+pointInf1 = mult(g1, bn128.curve_order) # None
+pointInf2 = mult(g2, bn128.curve_order) # None
+
 
 # a = pairing(mult(g2,10),g1)
 # b = pairing(g2, mult(g1,10))
@@ -263,7 +266,7 @@ s = FR(4565)
 #Build Proof_A, g1 based
 proof_A = sigma1_1[0]
 for i in range(numWires):
-    temp = None
+    temp = pointInf1
     for j in range(numGates):
         temp = add(temp, mult(sigma1_2[j], int(Ax[i][j])))
     proof_A = add(proof_A, mult(temp, int(Rx[i])))
@@ -273,7 +276,7 @@ proof_A = add(proof_A, mult(sigma1_1[2], int(r)))
 #Build proof_B, g2 based
 proof_B = sigma2_1[0]
 for i in range(numWires):
-    temp = None  
+    temp = pointInf2
     for j in range(numGates):
         temp = add(temp, mult(sigma2_2[j], int(Bx[i][j])))
     proof_B = add(proof_B, mult(temp, int(Rx[i])))
@@ -283,16 +286,17 @@ proof_B = add(proof_B, mult(sigma2_1[2], int(s)))
 #Build temp_proof_B
 temp_proof_B = sigma1_1[1]
 for i in range(numWires):
-    temp = None
+    temp = pointInf1
     for j in range(numGates):
         temp = add(temp, mult(sigma1_2[j], int(Bx[i][j])))
     temp_proof_B = add(temp_proof_B, mult(temp, int(Rx[i])))
 temp_proof_B = add(temp_proof_B, mult(sigma1_1[2], int(s)))
 
 #Build proof_C, g1_based
-proof_C = add(add(mult(proof_A, int(s)), mult(temp_proof_B, int(r))), neg(mult(sigma1_1[2], int(r*s))))
+# proof_C = add(add(mult(proof_A, int(s)), mult(temp_proof_B, int(r))), neg(mult(sigma1_1[2], int(r*s))))
+proof_C = add(add(mult(proof_A, int(s)), mult(temp_proof_B, int(r))), neg(mult(mult(sigma1_1[2], int(s)), int(r))))
 
-for i in range(1, numGates-1):
+for i in range(1, numWires-1):
     proof_C = add(proof_C, mult(sigma1_4[i], int(Rx[i])))
 
 for i in range(numGates-1):
@@ -355,19 +359,9 @@ print("#PROOF COMPLETENESS CHECK#")
 print("rhs : {}".format(rhs))
 print("lhs : {}".format(lhs))
 print("rhs == lhs ? : {}".format(rhs == lhs))
-print("")
-print('g1*A = {}'.format(mult(g1,int(A))))
-print('proof_A = {}'.format(proof_A))
-print("")
-print('g2*B = {}'.format(mult(g2,int(B))))
-print('proof_B = {}'.format(proof_B))
-print("")
-
-#TODO : g1*C == proof_C failing
-#problem is proof_C
-
-print('g1*C = {}'.format(mult(g1,int(C))))
-print('proof_C = {}'.format(proof_C))
+print("proof A check : {}".format(proof_A == mult(g1, int(A))))
+print("proof B check : {}".format(proof_B == mult(g2, int(B))))
+print("proof C check : {}".format(proof_C == mult(g1, int(C))))
 print("")
 
 # A = alpha + Rx*Ax_val + r*delta
@@ -388,7 +382,6 @@ print("")
 
 # print("proof completeness check : {}".format(result and lhs==rhs))
 
-# TODO : fix VERIFY failing
 ##### 3. VERIFY ######
     
 LHS = pairing(proof_B, proof_A)
@@ -399,7 +392,7 @@ temp = None
 for i in [0, numWires-1]:
   temp = add(temp, mult(sigma1_3[i], int(Rx[i])))
 
-RHS = (RHS * pairing(sigma2_1[1], temp)) * pairing(sigma2_1[2], proof[2])
+RHS = (RHS * pairing(sigma2_1[1], temp)) * pairing(sigma2_1[2], proof_C)
 
 print("LHS", LHS)
 print("")
