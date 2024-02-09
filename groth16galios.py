@@ -1,8 +1,8 @@
-from py_ecc.bn128 import(
-    multiply, G1, G2, add, pairing, neg, curve_order, final_exponentiate
-) 
 import galois
-import numpy as np
+
+from py_ecc.bn128 import(
+    multiply, G1, G2, add, pairing, neg, curve_order
+)
 
 #Taking some time..
 GF = galois.GF(curve_order)
@@ -47,21 +47,21 @@ Zx = [ int(num) % curve_order for num in Z ]
 Rx = [ int(num) % curve_order for num in R ]
 
 #GF np array
-npAx = GF(np.array(Ax))
-npBx = GF(np.array(Bx))
-npCx = GF(np.array(Cx))
-npZx = GF(np.array(Zx))
-npRx = GF(np.array(Rx))
+npAx = GF(Ax)
+npBx = GF(Bx)
+npCx = GF(Cx)
+npZx = GF(Zx)
+npRx = GF(Rx)
 
 #It is how multiply two matrix npAx.npRx
-npRax = npAx.transpose().dot(npRx)
-npRbx = npBx.transpose().dot(npRx)
-npRcx = npCx.transpose().dot(npRx)
+# npRax = npAx.transpose().dot(npRx)
+# npRbx = npBx.transpose().dot(npRx)
+# npRcx = npCx.transpose().dot(npRx)
 
 #Same with above
-# npRax = npRx.dot(npAx)
-# npRbx = npRx.dot(npBx)
-# npRcx = npRx.dot(npCx)
+npRax = npRx.dot(npAx)
+npRbx = npRx.dot(npBx)
+npRcx = npRx.dot(npCx)
 
 #It is how transform list to polynomial
 Rax = galois.Poly(npRax, order="asc")
