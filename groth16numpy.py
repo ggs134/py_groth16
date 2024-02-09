@@ -1,9 +1,14 @@
-from py_ecc.bn128 import multiply, G1, G2, add, pairing, neg, curve_order, final_exponentiate
+from py_ecc.bn128 import(
+    multiply, G1, G2, add, pairing, neg, curve_order, final_exponentiate
+) 
 import galois
 import numpy as np
 
 #Taking some time..
 GF = galois.GF(curve_order)
+
+pointInf1 = multiply(G1, curve_order) # None
+pointInf2 = multiply(G2, curve_order) # None
 
 Ap = [
     [-60.0, 110.0, -60.0, 10.0],
@@ -47,6 +52,7 @@ npCx = GF(np.array(Cx))
 npZx = GF(np.array(Zx))
 npRx = GF(np.array(Rx))
 
+#It is how multiply two matrix npAx.npRx
 npRax = npAx.transpose().dot(npRx)
 npRbx = npBx.transpose().dot(npRx)
 npRcx = npCx.transpose().dot(npRx)
@@ -62,6 +68,8 @@ Px = Rax * Rbx - Rcx
 
 Hx = Px // Zx       #quotient
 Remainder = Px % Zx #remainder
+
+npHx = galois.Poly(Hx.coeffs, order="asc").coeffs
 
 print("Px % Zx  = 0 ?  {}".format(Remainder == 0))
 
@@ -107,7 +115,7 @@ sigma1_3 = []
 sigma1_4 = []
 sigma1_5 = []
 
-sigma2_1 = [multiply(G2, int(alpha)), multiply(G2, int(beta)), multiply(G2, int(delta))]
+sigma2_1 = [multiply(G2, int(beta)), multiply(G2, int(gamma)), multiply(G2, int(delta))]
 sigma2_2 = []
 
 #sigma1_2
@@ -148,14 +156,109 @@ rhs = Zx_val*Hx_val
 print("Is lhs == rhs ? : {}".format(lhs == rhs))
 
 ### 2. PROVING ###
-# TODO : imp
+
+r = GF(4106)
+s = GF(4565)
+
+#Build Proof_A, G1 based
+proof_A = sigma1_1[0]
+for i in range(numWires):
+    temp = pointInf1
+    for j in range(numGates):
+        temp = add(temp, multiply(sigma1_2[j], int(Ax[i][j])))
+    proof_A = add(proof_A, multiply(temp, int(npRx[i])))
+proof_A = add(proof_A, multiply(sigma1_1[2], int(r)))
+
+#Build proof_B, G2 based
+proof_B = sigma2_1[0]
+for i in range(numWires):
+    temp = pointInf2
+    for j in range(numGates):
+        temp = add(temp, multiply(sigma2_2[j], int(Bx[i][j])))
+    proof_B = add(proof_B, multiply(temp, int(npRx[i])))
+proof_B = add(proof_B, multiply(sigma2_1[2], int(s)))
+
+#Build temp_proof_B
+temp_proof_B = sigma1_1[1]
+for i in range(numWires):
+    temp = pointInf1
+    for j in range(numGates):
+        temp = add(temp, multiply(sigma1_2[j], int(Bx[i][j])))
+    temp_proof_B = add(temp_proof_B, multiply(temp, int(npRx[i])))
+temp_proof_B = add(temp_proof_B, multiply(sigma1_1[2], int(s)))
+
+#Build proof_C, G1 based
+proof_C = add(add(multiply(proof_A, int(s)), multiply(temp_proof_B, int(r))), neg(multiply(sigma1_1[2], int(s*r))))
+
+for i in range(1, numWires-1):
+    proof_C = add(proof_C, multiply(sigma1_4[i], int(npRx[i])))
+
+for i in range(numGates-1):
+    proof_C = add(proof_C, multiply(sigma1_5[i], int(npHx[i])))
+
+proof = [proof_A, proof_B, proof_C]
+
+print("proofs : ", proof)
+print("")
 
 ### 2.1 PROOF COMPLETENESS CHECK ###
 # TODO : imp
 
+A = alpha + Rax(x_val) + r*delta
+B = beta + Rbx(x_val) + s*delta
+
+C0 = GF(1) / delta
+C1 = npRx[1:numWires-1]
+C1_1 = [ax_val * beta for ax_val in Ax_val[1:numWires-1]]
+C1_2 = [bx_val * alpha for bx_val in Bx_val[1:numWires-1]]
+C1_3 = Cx_val[1:numWires-1]
+C2 = Hx_val*Zx_val
+C3 = A*s + B*r - r*s*delta
+
+C1112 = [C1_1[i]+C1_2[i] for i in range(len(C1_1))]
+C111213 = [C1112[i]+C1_3[i] for i in range(len(C1_3))]
+C1111213_list = [C111213[i]*C1[i] for i in range(len(C1))]
+
+C1111213_temp = GF(0)
+for i in range(len(C1)):
+    C1111213_temp += C1111213_list[i]
+C1111213 = C1111213_temp
+
+C = C0 * (C1111213 + C2) + C3
+
+lhs = A*B
+# rhs = alpha*beta
+
+rpub = GF([npRx[0], npRx[-1]]) 
+valpub = GF([VAL[0], VAL[-1]]) 
+
+rhs = alpha*beta + gamma*rpub.dot(valpub) + C*delta
+
+print("#PROOF COMPLETENESS CHECK#")
+print("rhs : {}".format(rhs))
+print("lhs : {}".format(lhs))
+print("rhs == lhs ? : {}".format(rhs == lhs))
+print("proof A check : {}".format(proof_A == multiply(G1, int(A))))
+print("proof B check : {}".format(proof_B == multiply(G2, int(B))))
+print("proof C check : {}".format(proof_C == multiply(G1, int(C))))
+print("")
+
+
 ##### 3. VERIFY ######
 # TODO : imp
 
+LHS = pairing(proof_B, proof_A)
+RHS = pairing(sigma2_1[0], sigma1_1[0])
 
+temp = None
 
+for i in [0, numWires-1]:
+  temp = add(temp, multiply(sigma1_3[i], int(npRx[i])))
 
+RHS = (RHS * pairing(sigma2_1[1], temp)) * pairing(sigma2_1[2], proof_C)
+
+print("LHS", LHS)
+print("")
+print("RHS", RHS)
+print("")
+print("Verification result (RHS == LHS)? : {}".format(RHS == LHS))

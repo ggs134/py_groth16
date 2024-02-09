@@ -399,4 +399,3 @@ print("")
 print("RHS", RHS)
 print("")
 print("Verification result (RHS == LHS)? : {}".format(RHS == LHS))
-

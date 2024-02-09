@@ -149,6 +149,10 @@ P2y = F2("4082367875863433681332203403145435568316851327593401208105741076214120
 g2 = G2(P2x,P2y)
 h = g2
 
+#Extended curve for isomorphism
+EC2 = EC.base_extend(F2)
+EC2r = EC.change_ring(F2)
+
 # F.<z> = GF(p^2, modulus = x^2 + 1)
 # ECExt = EllipticCurve(F,[1,0])
 # ECExt = EC.base_extend(F)
@@ -379,9 +383,9 @@ print("result C", resultC)
 ##### 3. VERIFY ######
 ######################
 
-# def weil(point1, point2):
-#     val = EC.isomorphism_to(G2)(point1).weil_pairing(point2, p)
-#     return val
+def weil(point1, point2):
+    val = EC.isomorphism_to(EC2)(point1).weil_pairing(point2, p)
+    return val
 
 # LHS = weil(proof_A, proof_B)
 # RHS = weil(sigma1_1[0], sigma2_1[0])
