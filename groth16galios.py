@@ -5,6 +5,10 @@ from py_ecc.bn128 import(
     multiply, G1, G2, add, pairing, neg, curve_order
 )
 
+############################
+###  1. PREPARING DATA   ###
+############################
+
 #Taking some time..
 GF = galois.GF(curve_order)
 
@@ -82,7 +86,7 @@ npHx = galois.Poly(Hx.coeffs, order="asc").coeffs
 print("Px % Zx  = 0 ?  {}".format(Remainder == 0))
 
 ############################
-### 1.2 CRS CONSTRUCTION ###
+### 1. CRS CONSTRUCTION ###
 ############################
 
 alpha = GF(3926)
@@ -92,8 +96,6 @@ delta = GF(1357)
 x_val = GF(3721)
 
 tau = [alpha, beta, gamma, delta, x_val]
-
-#### DONE SO FAR ####
 
 Ax_val = []
 Bx_val = []
@@ -114,8 +116,8 @@ for i in range(len(Cx)):
 Zx_val = Zx(x_val)
 Hx_val = Hx(x_val)
 
-numGates = len(Ax[0])
-numWires = len(Ax)
+numGates = len(Ax[0]) #length of Ax
+numWires = len(Ax)    #height of Ax
 
 sigma1_1 = [multiply(G1, int(alpha)), multiply(G1, int(beta)), multiply(G1, int(delta))]
 sigma1_2 = []
