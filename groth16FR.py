@@ -1,3 +1,4 @@
+#pip install py_ecc
 from py_ecc.fields import bn128_FQ as FQ
 from py_ecc import bn128
 
