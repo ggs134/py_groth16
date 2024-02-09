@@ -1,3 +1,4 @@
+#pip install galois py_ecc
 import galois
 
 from py_ecc.bn128 import(
