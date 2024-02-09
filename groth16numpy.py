@@ -46,6 +46,7 @@ Cx = [ [int(num) % curve_order for num in vec] for vec in Cp ]
 Zx = [ int(num) % curve_order for num in Z ]
 Rx = [ int(num) % curve_order for num in R ]
 
+#GF np array
 npAx = GF(np.array(Ax))
 npBx = GF(np.array(Bx))
 npCx = GF(np.array(Cx))
@@ -57,6 +58,12 @@ npRax = npAx.transpose().dot(npRx)
 npRbx = npBx.transpose().dot(npRx)
 npRcx = npCx.transpose().dot(npRx)
 
+#Same with above
+# npRax = npRx.dot(npAx)
+# npRbx = npRx.dot(npBx)
+# npRcx = npRx.dot(npCx)
+
+#It is how transform list to polynomial
 Rax = galois.Poly(npRax, order="asc")
 Rbx = galois.Poly(npRbx, order="asc")
 Rcx = galois.Poly(npRcx, order="asc")
@@ -202,29 +209,21 @@ print("proofs : ", proof)
 print("")
 
 ### 2.1 PROOF COMPLETENESS CHECK ###
-# TODO : imp
 
 A = alpha + Rax(x_val) + r*delta
 B = beta + Rbx(x_val) + s*delta
 
 C0 = GF(1) / delta
 C1 = npRx[1:numWires-1]
-C1_1 = [ax_val * beta for ax_val in Ax_val[1:numWires-1]]
-C1_2 = [bx_val * alpha for bx_val in Bx_val[1:numWires-1]]
-C1_3 = Cx_val[1:numWires-1]
+
+C1_1 = GF([ax_val * beta for ax_val in Ax_val[1:numWires-1]])
+C1_2 = GF([bx_val * alpha for bx_val in Bx_val[1:numWires-1]])
+C1_3 = GF(Cx_val[1:numWires-1])
+
 C2 = Hx_val*Zx_val
 C3 = A*s + B*r - r*s*delta
 
-C1112 = [C1_1[i]+C1_2[i] for i in range(len(C1_1))]
-C111213 = [C1112[i]+C1_3[i] for i in range(len(C1_3))]
-C1111213_list = [C111213[i]*C1[i] for i in range(len(C1))]
-
-C1111213_temp = GF(0)
-for i in range(len(C1)):
-    C1111213_temp += C1111213_list[i]
-C1111213 = C1111213_temp
-
-C = C0 * (C1111213 + C2) + C3
+C = C0 *((C1_1 + C1_2 + C1_3).dot(C1) + C2) + C3
 
 lhs = A*B
 # rhs = alpha*beta
@@ -245,7 +244,6 @@ print("")
 
 
 ##### 3. VERIFY ######
-# TODO : imp
 
 LHS = pairing(proof_B, proof_A)
 RHS = pairing(sigma2_1[0], sigma1_1[0])
